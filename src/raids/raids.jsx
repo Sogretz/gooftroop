@@ -1,7 +1,5 @@
 import { useEffect, useState } from "react";
 import { supabase } from '../supabaseClient.js'
-import {Link} from "react-router-dom";
-
 function Raids()
 {
     const [raids, setRaids] = useState([]);
@@ -16,8 +14,7 @@ function Raids()
     }
 
     const raidData = raids.map((raid) => (
-        <li key={raid}>{raid}
-        </li>
+        <li key={raid.id}>{raid.id}</li>
     ));
 
     // async function getRaidMembers() {

@@ -5,7 +5,6 @@ import "./index.css";
 import Root from "./routes/root";
 import ErrorPage from "./error-page";
 import Raids from "./raids/raids";
-import RaidOverview, {loader as raidOverviewLoader} from "./raids/raidOverview"
 
 const router = createBrowserRouter([
     {

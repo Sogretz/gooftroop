@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { supabase } from '../supabaseClient.js'
-import {Link, useLoaderData} from "react-router-dom";
 
 function RaidOverview()
 {
