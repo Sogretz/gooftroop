@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from '../supabaseClient.js'
-import {Link} from "react-router-dom";
+import {Link, Outlet} from "react-router-dom";
 
 function Raids()
 {
@@ -11,12 +11,13 @@ function Raids()
     }, []);
 
     async function getRaids() {
-        const {data} = await supabase.from('raids').select('id')
+        const {data} = await supabase.from('raids').select()
         setRaids(data);
     }
 
     const raidData = raids.map((raid) => (
-        <li key={raid}>{raid}
+        <li key={raid.id}>
+            <Link to={`/raids/overview?raidId=${raid.id}`}>{raid.name}</Link>
         </li>
     ));
 
@@ -28,10 +29,15 @@ function Raids()
     // });
 
     return (
-        <ul>
-            {raidData}
-        </ul>
-    );
+        <>
+            <ul>
+                {raidData}
+            </ul>
+            <div id="detail">
+                <Outlet />
+            </div>
+        </>
+);
 }
 
 export default Raids

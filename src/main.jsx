@@ -5,7 +5,7 @@ import "./index.css";
 import Root from "./routes/root";
 import ErrorPage from "./error-page";
 import Raids from "./raids/raids";
-import RaidOverview, {loader as raidOverviewLoader} from "./raids/raidOverview"
+import RaidOverview from "./raids/raidOverview.jsx";
 
 const router = createBrowserRouter([
     {
@@ -14,8 +14,13 @@ const router = createBrowserRouter([
         errorElement: <ErrorPage />
     },
     {
-        path: "/raids",
+        path: "/raids/",
         element: <Raids />,
+        errorElement: <ErrorPage />
+    },
+    {
+        path: "/raids/overview",
+        element: <RaidOverview />,
         errorElement: <ErrorPage />
     },
 ]);
