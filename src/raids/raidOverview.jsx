@@ -1,3 +1,4 @@
+import * as React from "react";
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { supabase } from '../supabaseClient.js';
@@ -55,11 +56,25 @@ function RaidOverview()
                 return scheduledRaid;
             }
 
+            const fetchScheduledRaids = async (raidId) => {
+                const { data: scheduledRaids, error } = await supabase
+                    .from('scheduled_raids')
+                    .select('scheduled_at')
+                    .eq('raid_id', raidId);
+
+                if (error) {
+                    console.error('Error fetching scheduled raids:', error);
+                    return [];
+                }
+
+                return scheduledRaids;
+            };
+
             const fetchRaidRegisters = async (scheduledRaidId) => {
                 const { data: raidRegisters, error } = await supabase
                     .from('raid_registers')
                     .select('*')
-                    .eq('scheduled_raid_id', scheduledRaidId);
+                    .eq('raid_id', scheduledRaidId);
 
                 if (error) {
                     console.error('Error fetching raid registers: ', error);
@@ -83,19 +98,49 @@ function RaidOverview()
                 return characters;
             }
 
-            const fetchCharacterStrikes = async (characterId, raidId) => {
-                const { data: strikes, error } = await supabase
-                    .from('strikes')
-                    .select('')
-                    .eq('character_id', characterId)
-                    .eq('raid_id', raidId);
+            const fetchStrikesByRaidRegister = async (raidRegisterId) => {
+                const { data: raidRegisterStrikes, error } = await supabase
+                    .from('raid_register_strikes')
+                    .select('strike_id')
+                    .eq('raid_register_id', raidRegisterId);
 
                 if (error) {
-                    console.error('Error fetching strikes: ', error);
-                    return null;
+                    console.error('Error fetching raid_register_strikes:', error);
+                    return [];
+                }
+
+                const strikeIds = raidRegisterStrikes.map((strike) => strike.strike_id);
+
+                const { data: strikes, error: strikesError } = await supabase
+                    .from('strikes')
+                    .select('*')
+                    .in('id', strikeIds);
+
+                if (strikesError) {
+                    console.error('Error fetching strikes:', strikesError);
+                    return [];
                 }
 
                 return strikes;
+            };
+
+            const fetchScheduledRaidById = async (scheduledRaidId) => {
+                const { data, error } = await supabase
+                    .from('scheduled_raids')
+                    .select('*')
+                    .eq('id', scheduledRaidId);
+
+                if (error) {
+                    console.error('Error fetching scheduled raid:', error);
+                    return null;
+                }
+
+                if (data.length === 0) {
+                    console.error('Scheduled raid not found.');
+                    return null;
+                }
+
+                return data[0];
             };
 
             const raidDetails = await fetchRaidDetails(raidId);
@@ -112,7 +157,16 @@ function RaidOverview()
                 return;
             }
 
-            const raidRegisters = await fetchRaidRegisters(scheduledRaid.id);
+            const scheduledRaids = await fetchScheduledRaids(raidId);
+
+            if (!scheduledRaids) {
+                setLoading(false);
+                return;
+            }
+
+            raidDetails.scheduled_raids = scheduledRaids.map((scheduledRaid) => scheduledRaid.scheduled_at);
+
+            const raidRegisters = await fetchRaidRegisters(raidId);
 
             if (!raidRegisters) {
                 setLoading(false);
@@ -131,17 +185,24 @@ function RaidOverview()
 
                     const raidRegistersCount = characterRaidRegisters.length;
 
-                    const strikes = await fetchCharacterStrikes(character.id, raidId)
+                    const raidRegistersData = await Promise.all(
+                        characterRaidRegisters.map(async (register) => {
+                            const scheduledRaid = await fetchScheduledRaidById(register.scheduled_raid_id);
+                            const strikes = await fetchStrikesByRaidRegister(register.id);
+                            return { ...register, scheduled_at: scheduledRaid ? scheduledRaid.scheduled_at : null, strikes };
+                        })
+                    );
 
                     return {
                         ...character,
                         raid_registers_sum: raidRegistersCount,
-                        strikes: strikes,
+                        raid_registers_data: raidRegistersData
                     };
                 })
             );
 
             setRaidDetails(raidDetails);
+            console.log(raidDetails);
             setLoading(false);
         };
 
@@ -158,14 +219,27 @@ function RaidOverview()
 
     return (
         <div>
-            <h2>{raidDetails.name}</h2>
-            <p>Scheduled at: {raidDetails.scheduled_at}</p>
-            <h3>Characters:</h3>
-            <ul>
+            <h1>Raid Overview</h1>
+            <table>
+                <thead>
+                <tr>
+                    <th>Character Name</th>
+                    <th>Class / Main Spec / Off Spec</th>
+                    <th>Attendance Items Ratio</th>
+                </tr>
+                </thead>
+                <tbody>
                 {raidDetails.characters.map((character) => (
-                    <li key={character.id}>{character.name}, {character.class}, {character.main_spec}, {character.raid_registers_sum} {character.strikes.map((strike) => (<p key={strike.id}>, {strike.item}</p>))}</li>
+                    <tr key={character.id}>
+                        <td>{character.name}</td>
+                        <td style={{ whiteSpace: 'pre-wrap' }}>
+                            {`${character.class} / ${character.main_spec} / ${character.off_spec || ''}`}
+                        </td>
+                        <td>Attendance Items Ratio</td>
+                    </tr>
                 ))}
-            </ul>
+                </tbody>
+            </table>
         </div>
     )
 }
