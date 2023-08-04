@@ -1,0 +1,24 @@
+.table-cell-centered {
+    vertical-align: middle;
+}
+
+.modal-container {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 300px;
+    height: 200px;
+    background-color: white;
+    border: 1px solid #ccc;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    padding: 16px;
+}
+
+.modal-container h3 {
+    margin-top: 0;
+}
+
+.modal-container button {
+    margin-top: 16px;
+}
